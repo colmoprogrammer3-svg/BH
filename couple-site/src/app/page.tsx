@@ -27,12 +27,12 @@ export default async function Home() {
   const profileB = couple?.memberProfiles?.["B"];
   
   // 获取昵称：当前查看者(我)给作者起的备注名
-  // 规则：每个成员 profile 里的 nickname 字段表示「这个人给对方起的备注」
-  // 所以：当帖子作者是 A 时，要显示 B.profile.nickname（B 给 A 起的备注）；作者是 B 时，显示 A.profile.nickname。
+  // 规则：memberProfiles[X].nickname 存储的是「伴侣给 X 的备注」
+  // 所以：当 viewer 是 B、author 是 A 时，要显示 B 给 A 的备注 = profileA.nickname
   const getNickname = (authorRole: "A" | "B") => {
     const viewerRole = session.role;
-    if (viewerRole === "A" && authorRole === "B") return profileA?.nickname || "";
-    if (viewerRole === "B" && authorRole === "A") return profileB?.nickname || "";
+    if (viewerRole === "A" && authorRole === "B") return profileB?.nickname || "";
+    if (viewerRole === "B" && authorRole === "A") return profileA?.nickname || "";
     return "";
   };
   
