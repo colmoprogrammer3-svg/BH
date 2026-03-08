@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   if (!base64 || typeof base64 !== "string") {
     return NextResponse.json({ error: "invalid_base64" }, { status: 400 });
   }
-  if (base64.length > 1_500_000) {
+  if (base64.length > 4_000_000) {
     return NextResponse.json({ error: "image_too_large" }, { status: 400 });
   }
   if (caption.length > 200) {
