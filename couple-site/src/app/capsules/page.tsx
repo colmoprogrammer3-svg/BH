@@ -65,9 +65,10 @@ export default function CapsulesPage() {
       const res = await fetch("/api/profile");
       if (res.ok) {
         const data = await res.json();
+        // 根据 role 正确映射 A/B 的资料
         setProfiles({
-          A: data.user || {},
-          B: data.partner || {}
+          A: data.me.role === "A" ? data.me : data.partner,
+          B: data.me.role === "B" ? data.me : data.partner
         });
       }
     } catch {
