@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 // 信封图标
 function EnvelopeIcon({ className }: { className?: string }) {
@@ -11,6 +12,12 @@ function EnvelopeIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+type Profile = {
+  name?: string;
+  avatar?: string;
+  nickname?: string;
+};
 
 type Capsule = {
   id: string;
@@ -40,6 +47,7 @@ export default function CapsulesPage() {
   const [unlockAt, setUnlockAt] = useState(() => formatDateTimeLocal(new Date(Date.now() + 1000 * 60 * 60 * 24)));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profiles, setProfiles] = useState<{ A: Profile; B: Profile } | null>(null);
 
   async function refresh() {
     const res = await fetch("/api/capsules");
@@ -51,8 +59,25 @@ export default function CapsulesPage() {
     setItems(data.capsules);
   }
 
+  // 获取用户资料
+  async function loadProfiles() {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfiles({
+          A: data.user || {},
+          B: data.partner || {}
+        });
+      }
+    } catch {
+      // 忽略错误
+    }
+  }
+
   useEffect(() => {
     refresh();
+    loadProfiles();
   }, []);
 
   const sorted = useMemo(() => {
@@ -60,6 +85,18 @@ export default function CapsulesPage() {
   }, [items]);
 
   const lockedCount = useMemo(() => items.filter(i => !i.unlocked).length, [items]);
+
+  // 获取显示名字
+  const getDisplayName = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.nickname || profile?.name || (role === "A" ? "👦 A" : "👧 B");
+  };
+
+  // 获取头像
+  const getAvatar = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.avatar;
+  };
 
   async function add() {
     setLoading(true);
@@ -155,22 +192,21 @@ export default function CapsulesPage() {
                 />
               </label>
               <label className="block">
+                <div className="text-sm text-pink-600 mb-2">内容</div>
+                <textarea
+                  className="w-full rounded-xl border-2 border-pink-200 px-4 py-2.5 text-pink-900 placeholder-pink-300 focus:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-50 transition-all bg-pink-50/30 min-h-[80px]"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="写下想对未来的我们说的话..."
+                />
+              </label>
+              <label className="block">
                 <div className="text-sm text-pink-600 mb-2">解锁时间</div>
                 <input
                   type="datetime-local"
                   className="w-full rounded-xl border-2 border-pink-200 px-4 py-2.5 text-pink-900 focus:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-50 transition-all bg-pink-50/30"
                   value={unlockAt}
                   onChange={(e) => setUnlockAt(e.target.value)}
-                />
-              </label>
-              <label className="block">
-                <div className="text-sm text-pink-600 mb-2">内容（解锁前对双方都不可见）</div>
-                <textarea
-                  className="w-full resize-none rounded-xl border-2 border-pink-200 px-4 py-3 text-pink-900 placeholder-pink-300 focus:border-pink-400 focus:outline-none focus:ring-4 focus:ring-pink-50 transition-all bg-pink-50/30"
-                  rows={4}
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="写下想对未来说的悄悄话..."
                 />
               </label>
             </div>
@@ -181,16 +217,16 @@ export default function CapsulesPage() {
               </div>
             )}
 
-            <div className="mt-4 flex justify-end">
+            <div className="flex justify-end mt-4">
               <button
-                className="rounded-xl bg-gradient-to-r from-pink-500 to-pink-500 px-5 py-2.5 text-white font-semibold shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60"
-                disabled={loading || !title.trim() || !content.trim()}
+                className="rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-5 py-2.5 text-white font-semibold shadow-md shadow-pink-200 hover:shadow-lg hover:shadow-pink-300 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-60"
+                disabled={loading || !title.trim()}
                 onClick={add}
                 type="button"
               >
                 <span className="flex items-center gap-1.5">
-                  <span>💌</span>
-                  {loading ? "埋下中..." : "埋下胶囊"}
+                  <span>�</span>
+                  {loading ? "创建中..." : "封存胶囊"}
                 </span>
               </button>
             </div>
@@ -200,39 +236,54 @@ export default function CapsulesPage() {
         {/* 胶囊列表 */}
         <div className="space-y-4">
           {sorted.map((c) => {
-            const d = daysLeft(c.unlockAt);
+            const left = daysLeft(c.unlockAt);
             return (
               <div 
                 key={c.id} 
-                className={`relative rounded-2xl border-2 p-5 transition-all ${
+                className={`rounded-2xl border-2 p-5 transition-all ${
                   c.unlocked 
-                    ? "bg-gradient-to-br from-pink-50 to-pink-50 border-pink-200" 
+                    ? "bg-pink-50/50 border-pink-100" 
                     : "bg-white border-pink-100 hover:border-pink-200 shadow-sm"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
-                      c.unlocked ? "bg-gradient-to-br from-pink-400 to-pink-400" : "bg-pink-100"
-                    }`}>
-                      {c.unlocked ? "💌" : "🔒"}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">{c.unlocked ? "🔓" : "🔒"}</span>
+                      <h3 className="font-semibold text-pink-900">{c.title}</h3>
                     </div>
-                    <div>
-                      <div className="text-sm font-semibold text-pink-800">{c.title}</div>
-                      <div className="mt-1 text-xs text-pink-500">
-                        {c.unlocked ? (
-                          <span className="text-rose-500 font-medium">✓ 已解锁</span>
+                    
+                    {!c.unlocked && (
+                      <p className="text-sm text-pink-600 mb-2">
+                        还要 {left} 天解锁 · {new Date(c.unlockAt).toLocaleString("zh-CN")}
+                      </p>
+                    )}
+                    
+                    {c.unlocked && c.content && (
+                      <p className="text-sm text-pink-800 bg-pink-50 rounded-xl p-3 whitespace-pre-wrap">
+                        {c.content}
+                      </p>
+                    )}
+                    
+                    <div className="mt-2 text-xs text-pink-400 flex items-center gap-1">
+                      <span>创建者：</span>
+                      <div className="flex items-center gap-1">
+                        {getAvatar(c.createdByRole) ? (
+                          <Image
+                            src={getAvatar(c.createdByRole)!}
+                            alt={getDisplayName(c.createdByRole)}
+                            width={16}
+                            height={16}
+                            className="w-4 h-4 rounded-full object-cover"
+                          />
                         ) : (
-                          <span>还要 {d} 天解锁</span>
+                          <span>{c.createdByRole === "A" ? "👦" : "👧"}</span>
                         )}
-                        <span className="mx-1">·</span>
-                        <span>{new Date(c.unlockAt).toLocaleString("zh-CN")}</span>
-                      </div>
-                      <div className="mt-0.5 text-[11px] text-pink-400">
-                        创建者：{c.createdByRole === "A" ? "👦 A" : "👧 B"}
+                        <span>{getDisplayName(c.createdByRole)}</span>
                       </div>
                     </div>
                   </div>
+
                   <button
                     className="text-xs text-pink-400 hover:text-rose-500 disabled:opacity-60 transition-colors"
                     disabled={loading}
@@ -243,21 +294,6 @@ export default function CapsulesPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
-                </div>
-
-                <div className={`mt-4 rounded-xl p-4 ${
-                  c.unlocked 
-                    ? "bg-white/80 border border-pink-100" 
-                    : "bg-pink-50/50 border border-pink-100 border-dashed"
-                }`}>
-                  {c.unlocked ? (
-                    <div className="whitespace-pre-wrap text-sm text-pink-900">{c.content}</div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <div className="text-2xl mb-2">🔒</div>
-                      <div className="text-sm text-pink-400">未到解锁时间，耐心等待哦～</div>
-                    </div>
-                  )}
                 </div>
               </div>
             );

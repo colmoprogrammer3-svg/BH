@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 // 爱心图标
 function HeartIcon({ className }: { className?: string }) {
@@ -11,6 +12,12 @@ function HeartIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+type Profile = {
+  name?: string;
+  avatar?: string;
+  nickname?: string;
+};
 
 type Todo = {
   id: string;
@@ -27,7 +34,9 @@ export default function TodosPage() {
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profiles, setProfiles] = useState<{ A: Profile; B: Profile } | null>(null);
 
+  // 获取待办列表
   async function refresh() {
     const res = await fetch("/api/todos");
     if (!res.ok) {
@@ -38,8 +47,25 @@ export default function TodosPage() {
     setItems(data.todos);
   }
 
+  // 获取用户资料
+  async function loadProfiles() {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfiles({
+          A: data.user || {},
+          B: data.partner || {}
+        });
+      }
+    } catch {
+      // 忽略错误
+    }
+  }
+
   useEffect(() => {
     refresh();
+    loadProfiles();
   }, []);
 
   const sorted = useMemo(() => {
@@ -51,6 +77,18 @@ export default function TodosPage() {
 
   const completedCount = useMemo(() => items.filter(i => i.done).length, [items]);
   const totalCount = items.length;
+
+  // 获取显示名字
+  const getDisplayName = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.nickname || profile?.name || (role === "A" ? "👦 A" : "👧 B");
+  };
+
+  // 获取头像
+  const getAvatar = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.avatar;
+  };
 
   async function add() {
     setLoading(true);
@@ -227,11 +265,39 @@ export default function TodosPage() {
                     <div className={`text-sm transition-all ${t.done ? "line-through text-pink-400" : "text-pink-900"}`}>
                       {t.text}
                     </div>
-                    <div className="mt-1 text-xs text-pink-400">
-                      创建者：{t.createdByRole === "A" ? "👦 A" : "👧 B"}
+                    <div className="mt-1 text-xs text-pink-400 flex items-center gap-1">
+                      <span>创建者：</span>
+                      <div className="flex items-center gap-1">
+                        {getAvatar(t.createdByRole) ? (
+                          <Image
+                            src={getAvatar(t.createdByRole)!}
+                            alt={getDisplayName(t.createdByRole)}
+                            width={16}
+                            height={16}
+                            className="w-4 h-4 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span>{t.createdByRole === "A" ? "👦" : "👧"}</span>
+                        )}
+                        <span>{getDisplayName(t.createdByRole)}</span>
+                      </div>
                       {t.done && t.doneByRole && (
-                        <span className="ml-2 text-rose-500">
-                          ✓ 完成者：{t.doneByRole === "A" ? "👦 A" : "👧 B"}
+                        <span className="ml-2 text-rose-500 flex items-center gap-1">
+                          <span>✓ 完成者：</span>
+                          <div className="flex items-center gap-1">
+                            {getAvatar(t.doneByRole) ? (
+                              <Image
+                                src={getAvatar(t.doneByRole)!}
+                                alt={getDisplayName(t.doneByRole)}
+                                width={16}
+                                height={16}
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span>{t.doneByRole === "A" ? "👦" : "👧"}</span>
+                            )}
+                            <span>{getDisplayName(t.doneByRole)}</span>
+                          </div>
                         </span>
                       )}
                     </div>

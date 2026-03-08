@@ -13,6 +13,12 @@ function HeartIcon({ className }: { className?: string }) {
   );
 }
 
+type Profile = {
+  name?: string;
+  avatar?: string;
+  nickname?: string;
+};
+
 type Photo = {
   id: string;
   uploadedByRole: "A" | "B";
@@ -55,6 +61,7 @@ export default function PhotosPage() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [profiles, setProfiles] = useState<{ A: Profile; B: Profile } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function refresh() {
@@ -67,8 +74,25 @@ export default function PhotosPage() {
     setItems(data.photos);
   }
 
+  // 获取用户资料
+  async function loadProfiles() {
+    try {
+      const res = await fetch("/api/profile");
+      if (res.ok) {
+        const data = await res.json();
+        setProfiles({
+          A: data.user || {},
+          B: data.partner || {}
+        });
+      }
+    } catch {
+      // 忽略错误
+    }
+  }
+
   useEffect(() => {
     refresh();
+    loadProfiles();
   }, []);
 
   const sorted = useMemo(() => {
@@ -109,6 +133,18 @@ export default function PhotosPage() {
     if (!previewId) return null;
     return items.find((p) => p.id === previewId) ?? null;
   }, [items, previewId]);
+
+  // 获取显示名字
+  const getDisplayName = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.nickname || profile?.name || (role === "A" ? "👦 A" : "👧 B");
+  };
+
+  // 获取头像
+  const getAvatar = (role: "A" | "B") => {
+    const profile = profiles?.[role];
+    return profile?.avatar;
+  };
 
   async function upload() {
     if (!file) {
@@ -334,13 +370,23 @@ export default function PhotosPage() {
               </div>
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    p.uploadedByRole === "A" 
-                      ? "bg-gradient-to-br from-pink-400 to-pink-500 text-white" 
-                      : "bg-gradient-to-br from-pink-400 to-rose-500 text-white"
-                  }`}>
-                    {p.uploadedByRole}
-                  </div>
+                  {getAvatar(p.uploadedByRole) ? (
+                    <Image
+                      src={getAvatar(p.uploadedByRole)!}
+                      alt={getDisplayName(p.uploadedByRole)}
+                      width={24}
+                      height={24}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                      p.uploadedByRole === "A" 
+                        ? "bg-gradient-to-br from-pink-400 to-pink-500 text-white" 
+                        : "bg-gradient-to-br from-pink-400 to-rose-500 text-white"
+                    }`}>
+                      {p.uploadedByRole}
+                    </div>
+                  )}
                   <div className="text-[11px] text-pink-400">
                     {new Date(p.createdAt).toLocaleDateString("zh-CN")}
                   </div>
@@ -432,16 +478,26 @@ export default function PhotosPage() {
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                      preview.uploadedByRole === "A" 
-                        ? "bg-gradient-to-br from-pink-400 to-pink-500 text-white" 
-                        : "bg-gradient-to-br from-pink-400 to-rose-500 text-white"
-                    }`}>
-                      {preview.uploadedByRole}
-                    </div>
+                    {getAvatar(preview.uploadedByRole) ? (
+                      <Image
+                        src={getAvatar(preview.uploadedByRole)!}
+                        alt={getDisplayName(preview.uploadedByRole)}
+                        width={40}
+                        height={40}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                        preview.uploadedByRole === "A" 
+                          ? "bg-gradient-to-br from-pink-400 to-pink-500 text-white" 
+                          : "bg-gradient-to-br from-pink-400 to-rose-500 text-white"
+                      }`}>
+                        {preview.uploadedByRole}
+                      </div>
+                    )}
                     <div>
                       <div className="text-sm font-medium text-pink-800">
-                        上传者：{preview.uploadedByRole === "A" ? "👦 A" : "👧 B"}
+                        上传者：{getDisplayName(preview.uploadedByRole)}
                       </div>
                       <div className="text-xs text-pink-400">
                         {new Date(preview.createdAt).toLocaleString("zh-CN")}
