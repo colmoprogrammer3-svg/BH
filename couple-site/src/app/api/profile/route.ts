@@ -111,7 +111,12 @@ export async function PUT(request: Request) {
   if (birthday !== undefined) roleProfile.birthday = birthday ? new Date(birthday) : null;
   if (avatar !== undefined) roleProfile.avatar = avatar;
   if (partnerNickname !== undefined) {
-    roleProfile.nickname = partnerNickname;
+    // 保存到对方的 profile，而不是自己的
+    if (!memberProfiles[otherRole]) {
+      memberProfiles[otherRole] = {};
+    }
+    const otherProfile = memberProfiles[otherRole] as Record<string, unknown>;
+    otherProfile.nickname = partnerNickname;
   }
   // 更新在一起日期
   if (togetherSince !== undefined) {
