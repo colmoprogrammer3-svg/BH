@@ -53,7 +53,7 @@ export default function ProfilePage() {
       setName(data.me.name || "");
       setBirthday(data.me.birthday || "");
       setAvatar(data.me.avatar || "");
-      setPartnerNickname(data.me.nickname || "");
+      setPartnerNickname(data.partner.nickname || "");
     } catch (e) {
       console.error("Load failed:", e);
     } finally {
@@ -94,7 +94,7 @@ export default function ProfilePage() {
       setName(data.me.name || "");
       setBirthday(data.me.birthday || "");
       setAvatar(data.me.avatar || "");
-      setPartnerNickname(data.me.nickname || "");
+      setPartnerNickname(data.partner.nickname || "");
       setTogetherSince(data.togetherSince || "");
       
       setMessage("已保存 ✓");
@@ -112,7 +112,7 @@ export default function ProfilePage() {
     if (loading || !me) return;
     
     // 如果值和服务器返回的一样，不需要保存
-    if (partnerNickname === (me.nickname || "")) return;
+    if (partnerNickname === (partner?.nickname || "")) return;
 
     const timer = setTimeout(() => {
       save("partnerNickname", partnerNickname);
@@ -341,8 +341,8 @@ export default function ProfilePage() {
               <div className="flex-1">
                   <p className="font-medium text-pink-800">
                     {partner.name || "还没有设置昵称"}
-                    {me.nickname && (
-                      <span className="text-pink-500">（{me.nickname}）</span>
+                    {partner.nickname && (
+                      <span className="text-pink-500">（{partner.nickname}）</span>
                     )}
                   </p>
                   {partner.birthday && (
@@ -362,7 +362,7 @@ export default function ProfilePage() {
                       onChange={(e) => setPartnerNickname(e.target.value)}
                       placeholder="给TA起个备注名..."
                     />
-                    {saving && partnerNickname !== (me.nickname || "") && (
+                    {saving && partnerNickname !== (partner?.nickname || "") && (
                       <p className="text-xs text-pink-400 mt-1">保存中...</p>
                     )}
                   </div>
