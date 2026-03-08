@@ -19,3 +19,7 @@ export async function getAuthUserIdFromCookies(): Promise<string | null> {
   if (!session) return null;
   return session.coupleId;
 }
+
+export async function getAuthSessionFromCookies(): Promise<SessionInfo | null> {
+  return getSessionFromCookies();
+}

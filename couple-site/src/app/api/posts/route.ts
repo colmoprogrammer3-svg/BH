@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 
 import { connectToDatabase } from "@/lib/db";
-import { getAuthUserIdFromCookies } from "@/lib/request";
+import { getAuthSessionFromCookies } from "@/lib/request";
 import { PostModel } from "@/models/Post";
 import { UserModel } from "@/models/User";
 
 export async function GET(req: Request) {
-  const userId = await getAuthUserIdFromCookies();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await getAuthSessionFromCookies();
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get("cursor");
 
   await connectToDatabase();
-  const user = await UserModel.findById(userId).lean();
+  const user = await UserModel.findById(session.coupleId).lean();
   if (!user?.coupleId) return NextResponse.json({ posts: [] });
 
   const query: Record<string, unknown> = { coupleId: user.coupleId };
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     posts: posts.map((p) => ({
       id: p._id.toString(),
-      authorId: p.authorId.toString(),
+      authorRole: p.authorRole,
       coupleId: p.coupleId.toString(),
       text: p.text,
       images: p.images,
@@ -37,8 +37,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = await getAuthUserIdFromCookies();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const session = await getAuthSessionFromCookies();
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = (await req.json()) as {
     text?: string;
@@ -61,12 +61,10 @@ export async function POST(req: Request) {
   }
 
   await connectToDatabase();
-  const user = await UserModel.findById(userId);
-  if (!user?.coupleId) return NextResponse.json({ error: "no_couple" }, { status: 400 });
 
   const post = await PostModel.create({
-    coupleId: user.coupleId,
-    authorId: user._id,
+    coupleId: session.coupleId,
+    authorRole: session.role,
     text,
     images,
   });
