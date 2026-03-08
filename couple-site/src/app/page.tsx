@@ -31,12 +31,9 @@ export default async function Home() {
   // 所以：当帖子作者是 A 时，要显示 B.profile.nickname（B 给 A 起的备注）；作者是 B 时，显示 A.profile.nickname。
   const getNickname = (authorRole: "A" | "B") => {
     const viewerRole = session.role;
-    const viewerProfile = viewerRole === "A" ? profileA : profileB;
-
-    // 只在作者不是自己时显示（自己帖子不需要显示自己给自己的备注）
-    if (authorRole === viewerRole) return "";
-
-    return viewerProfile?.nickname || "";
+    if (viewerRole === "A" && authorRole === "B") return profileA?.nickname || "";
+    if (viewerRole === "B" && authorRole === "A") return profileB?.nickname || "";
+    return "";
   };
   
   const getAuthorName = (role: "A" | "B") => {
