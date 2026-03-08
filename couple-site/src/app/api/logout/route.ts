@@ -6,7 +6,7 @@ export async function GET() {
   cookieStore.set("couple_id", "", { httpOnly: true, path: "/", maxAge: 0 });
   cookieStore.set("role", "", { httpOnly: true, path: "/", maxAge: 0 });
   
-  return NextResponse.redirect(new URL("/enter", "http://localhost:3000"));
+  return NextResponse.redirect(new URL("/enter", "https://bh-sooty.vercel.app"));
 }
 
 export async function POST() {
@@ -14,5 +14,5 @@ export async function POST() {
   cookieStore.set("couple_id", "", { httpOnly: true, path: "/", maxAge: 0 });
   cookieStore.set("role", "", { httpOnly: true, path: "/", maxAge: 0 });
   
-  return NextResponse.redirect(new URL("/enter", "http://localhost:3000"));
+  return NextResponse.redirect(new URL("/enter", "https://bh-sooty.vercel.app"));
 }
