@@ -7,6 +7,7 @@ import { getSessionFromCookies } from "@/lib/request";
 export async function GET(request: Request) {
   const session = await getSessionFromCookies();
   if (!session) {
+    console.log("Avatar API: No session found");
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -20,10 +21,13 @@ export async function GET(request: Request) {
   await connectToDatabase();
   const couple = await CoupleModel.findById(session.coupleId).lean();
   if (!couple) {
+    console.log(`Avatar API: Couple not found for ${session.coupleId}`);
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   const avatar = couple.memberProfiles?.[role]?.avatar;
+  
+  console.log(`Avatar API: ${session.role} requesting ${role} avatar, exists: ${!!avatar}`);
 
   if (!avatar) {
     return NextResponse.json({ error: "no_avatar" }, { status: 404 });
