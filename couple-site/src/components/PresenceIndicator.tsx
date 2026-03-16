@@ -9,22 +9,54 @@ interface PartnerPresence {
   partnerName: string;
 }
 
+// 节流函数 - 限制频率
+function throttle<T extends (...args: unknown[]) => unknown>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle = false;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+
 export default function PresenceIndicator() {
   const [presence, setPresence] = useState<PartnerPresence | null>(null);
   const [error, setError] = useState<string | null>(null);
   const initialized = useRef(false);
+  const lastHeartbeat = useRef<number>(0);
+  const isVisible = useRef(true);
 
   // 发送心跳 - 更新自己的在线状态
   const sendHeartbeat = useCallback(async () => {
     try {
       await fetch("/api/presence", { method: "POST" });
+      lastHeartbeat.current = Date.now();
     } catch (err) {
       console.error("Heartbeat failed:", err);
     }
   }, []);
 
+  // 节流版心跳 - 最小间隔 30 秒
+  const throttledHeartbeat = useCallback(
+    throttle(() => {
+      // 只有距离上次心跳超过 25 秒才发送
+      if (Date.now() - lastHeartbeat.current > 25000) {
+        sendHeartbeat();
+      }
+    }, 30000),
+    [sendHeartbeat]
+  );
+
   // 获取伴侣的在线状态
   const checkPartnerStatus = useCallback(async () => {
+    // 页面不可见时不检查
+    if (!isVisible.current) return;
+    
     try {
       const res = await fetch("/api/presence");
       if (!res.ok) {
@@ -50,14 +82,21 @@ export default function PresenceIndicator() {
     checkPartnerStatus();
 
     // 每30秒发送一次心跳
-    const heartbeatInterval = setInterval(sendHeartbeat, 30000);
+    const heartbeatInterval = setInterval(() => {
+      if (isVisible.current) {
+        sendHeartbeat();
+      }
+    }, 30000);
 
-    // 每10秒检查一次伴侣状态
-    const checkInterval = setInterval(checkPartnerStatus, 10000);
+    // 每30秒检查一次伴侣状态（从10秒改为30秒，减少请求）
+    const checkInterval = setInterval(checkPartnerStatus, 30000);
 
     // 页面可见性变化时更新状态
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      const visible = document.visibilityState === "visible";
+      isVisible.current = visible;
+      if (visible) {
+        // 页面重新可见时立即更新
         sendHeartbeat();
         checkPartnerStatus();
       }
@@ -65,9 +104,9 @@ export default function PresenceIndicator() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // 页面活动时发送心跳
+    // 页面活动时发送心跳（节流版，最多每30秒一次）
     const handleActivity = () => {
-      sendHeartbeat();
+      throttledHeartbeat();
     };
 
     window.addEventListener("click", handleActivity);
@@ -82,7 +121,7 @@ export default function PresenceIndicator() {
       window.removeEventListener("keydown", handleActivity);
       window.removeEventListener("scroll", handleActivity);
     };
-  }, [sendHeartbeat, checkPartnerStatus]);
+  }, [sendHeartbeat, checkPartnerStatus, throttledHeartbeat]);
 
   if (!presence) {
     return (

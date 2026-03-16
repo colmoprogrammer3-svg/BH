@@ -178,7 +178,7 @@ export default function Home() {
     }
   }
 
-  const myProfile = profiles?.[myRole];
+  const myProfile = profiles && myRole ? profiles[myRole as "A" | "B"] : null;
 
   const getNickname = (authorRole: "A" | "B") => {
     if (!profiles) return "";
