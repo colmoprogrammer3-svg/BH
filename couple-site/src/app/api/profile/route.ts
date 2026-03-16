@@ -66,24 +66,26 @@ export async function POST(request: Request) {
   const profileA = couple.memberProfiles?.["A"] || { name: "", birthday: null, avatar: "", nickname: "" };
   const profileB = couple.memberProfiles?.["B"] || { name: "", birthday: null, avatar: "", nickname: "" };
 
-  // 生成头像 URL
-  const getAvatarUrl = (avatar: string, role: "A" | "B") => {
+  // 对于登录页面，直接返回 base64 头像数据，不需要 cookie 验证
+  const getAvatarData = (avatar: string) => {
     if (!avatar) return "";
+    // 如果是 URL（非 base64），直接返回
     if (!avatar.startsWith("data:")) return avatar;
-    return `/api/avatar?role=${role}`;
+    // 否则返回完整的 base64 数据
+    return avatar;
   };
 
   return NextResponse.json({
     A: {
       name: profileA.name || "",
       birthday: profileA.birthday ? new Date(profileA.birthday).toISOString().split("T")[0] : null,
-      avatar: getAvatarUrl(profileA.avatar || "", "A"),
+      avatar: getAvatarData(profileA.avatar || ""),
       nickname: profileA.nickname || "",
     },
     B: {
       name: profileB.name || "",
       birthday: profileB.birthday ? new Date(profileB.birthday).toISOString().split("T")[0] : null,
-      avatar: getAvatarUrl(profileB.avatar || "", "B"),
+      avatar: getAvatarData(profileB.avatar || ""),
       nickname: profileB.nickname || "",
     },
   });
