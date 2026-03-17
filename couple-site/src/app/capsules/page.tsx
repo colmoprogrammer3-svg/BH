@@ -272,11 +272,9 @@ export default function CapsulesPage() {
                       <span>创建者：</span>
                       <div className="flex items-center gap-1">
                         {getAvatar(c.createdByRole) ? (
-                          <Image
+                          <img
                             src={getAvatar(c.createdByRole)!}
                             alt={getDisplayName(c.createdByRole)}
-                            width={16}
-                            height={16}
                             className="w-4 h-4 rounded-full object-cover"
                           />
                         ) : (

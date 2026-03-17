@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 
 // 爱心图标
 function HeartIcon({ className }: { className?: string }) {
@@ -62,12 +61,10 @@ const PhotoCard = React.memo(function PhotoCard({
       }}
     >
       <div className="relative">
-        <Image
+        <img
           src={photo.imageUrl}
           alt={photo.caption || "photo"}
           className="h-36 w-full object-cover"
-          width={600}
-          height={400}
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-pink-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
