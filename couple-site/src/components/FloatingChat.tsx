@@ -20,22 +20,31 @@ export default function FloatingChat() {
   const inputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
 
-  // 登录页面不显示 AI 聊天
-  if (pathname === "/enter") {
-    return null;
-  }
+  const isEnterPage = pathname === "/enter";
 
   // 自动滚动到底部
   useEffect(() => {
+    if (isEnterPage) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [isEnterPage, messages]);
 
   // 聚焦输入框
   useEffect(() => {
+    if (isEnterPage) return;
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isEnterPage, isOpen]);
+
+  // 登录页不显示时，确保下次进入首页时状态是干净的
+  useEffect(() => {
+    if (!isEnterPage) return;
+    setIsOpen(false);
+    setMessages([]);
+    setInput("");
+    setLoading(false);
+    setError(null);
+  }, [isEnterPage]);
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -96,6 +105,7 @@ export default function FloatingChat() {
   }
 
   if (!isOpen) {
+    if (isEnterPage) return null;
     return (
       <button
         onClick={() => setIsOpen(true)}
@@ -112,6 +122,8 @@ export default function FloatingChat() {
       </button>
     );
   }
+
+  if (isEnterPage) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl shadow-pink-200 border-2 border-pink-100 overflow-hidden animate-fadeIn">
