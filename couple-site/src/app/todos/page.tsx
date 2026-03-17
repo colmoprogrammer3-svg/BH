@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 // 爱心图标
 function HeartIcon({ className }: { className?: string }) {
@@ -28,8 +28,6 @@ type Todo = {
   doneAt: string | null;
   createdAt: string;
 };
-
-import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 export default function TodosPage() {
   const [items, setItems] = useState<Todo[]>([]);
