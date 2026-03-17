@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 // 爱心图标
 function HeartIcon({ className }: { className?: string }) {
@@ -53,8 +54,6 @@ function formatDate(date: Date): string {
 function isToday(dateStr: string): boolean {
   return dateStr === formatDate(new Date());
 }
-
-import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 export default function DiaryPage() {
   const [diaries, setDiaries] = useState<Diary[]>([]);
