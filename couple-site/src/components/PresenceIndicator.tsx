@@ -65,13 +65,7 @@ export default function PresenceIndicator() {
 
   const pathname = usePathname();
 
-  // 登录页面不显示 PresenceIndicator
-
-  if (pathname === "/enter") {
-
-    return null;
-
-  }
+  const isEnterPage = pathname === "/enter";
 
 
 
@@ -162,6 +156,20 @@ export default function PresenceIndicator() {
 
 
   useEffect(() => {
+
+    if (isEnterPage) {
+
+      // 进入登录页时重置初始化状态，避免下次登录后不触发初始化逻辑
+
+      initialized.current = false;
+
+      setPresence(null);
+
+      setError(null);
+
+      return;
+
+    }
 
     if (initialized.current) return;
 
@@ -267,7 +275,14 @@ export default function PresenceIndicator() {
 
     };
 
-  }, [sendHeartbeat, checkPartnerStatus, throttledHeartbeat]);
+  }, [isEnterPage, sendHeartbeat, checkPartnerStatus, throttledHeartbeat]);
+
+  // 登录页面不显示 PresenceIndicator（但 hooks 依然保持一致调用）
+  if (isEnterPage) {
+
+    return null;
+
+  }
 
 
 
