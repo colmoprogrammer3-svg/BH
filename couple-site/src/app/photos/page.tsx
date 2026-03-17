@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 // 爱心图标
 function HeartIcon({ className }: { className?: string }) {
@@ -142,8 +143,6 @@ function fileToBase64(file: File): Promise<{ base64: string; contentType: string
 }
 
 const PHOTOS_PER_PAGE = 9; // 每页显示 9 张照片（3x3 网格）
-
-import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 export default function PhotosPage() {
   const [items, setItems] = useState<Photo[]>([]);
