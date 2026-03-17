@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 // 信封图标
 function EnvelopeIcon({ className }: { className?: string }) {
@@ -38,8 +39,6 @@ function daysLeft(unlockAt: string) {
   const diff = target.getTime() - now.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
-
-import { globalCache, fetchProfiles } from "@/lib/globalCache";
 
 export default function CapsulesPage() {
   const [items, setItems] = useState<Capsule[]>([]);
